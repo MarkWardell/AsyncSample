@@ -30,99 +30,58 @@ namespace AsyncExampleWPF
             InitializeComponent();
         }
 
-        private async void startButton_ClickAsync(object sender, RoutedEventArgs e)
+        private async void startButtonClickAsync(object sender, RoutedEventArgs e)
         {
-            startButton.IsEnabled = false;
             resultsTextBox.Clear();
-            await SumPageSizesAsync();
-            resultsTextBox.Text += "\r\nControl returned to startButton_Click.";
-            startButton.IsEnabled = true;
+            await CreateMultipleTasksAsync();
+            resultsTextBox.Text += "\r\n\r\nControl returned to startButton_Click.\r\n";
         }
 
-        private async Task SumPageSizesAsync()
+        private async Task CreateMultipleTasksAsync()
         {
-            HttpClient client = new HttpClient() { MaxResponseContentBufferSize = 1000000 };
-            // Make a list of web addresses.
-            List<string> urlList = SetUpURLList();
+            // Declare an HttpClient object, and increase the buffer size. The  
+            // default buffer size is 65,536.  
+            HttpClient client =
+                new HttpClient() { MaxResponseContentBufferSize = 1000000 };
 
-            var total = 0;
-            foreach (var url in urlList)
-            {
-                // GetURLContents returns the contents of url as a byte array.
-                //byte[] urlContents = await GetURLContentsAsync(url);
-                byte[] urlContents = await client.GetByteArrayAsync(url);
+            // Create and start the tasks. As each task finishes, DisplayResults   
+            // displays its length.  
+            Task<int> download1 =
+                ProcessURLAsync("http://msdn.microsoft.com", client);
+            Task<int> download2 =
+                ProcessURLAsync("http://msdn.microsoft.com/library/hh156528(VS.110).aspx", client);
+            Task<int> download3 =
+                ProcessURLAsync("http://msdn.microsoft.com/library/67w7t67f.aspx", client);
 
-                DisplayResults(url, urlContents);
+            // Await each task.  
+            int length1 = await download1;
+            int length2 = await download2;
+            int length3 = await download3;
 
-                // Update the total.
-                total += urlContents.Length;
-            }
+            int total = length1 + length2 + length3;
 
-            // Display the total count for all of the web addresses.
+            // Display the total count for the downloaded websites.  
             resultsTextBox.Text +=
                 string.Format("\r\n\r\nTotal bytes returned:  {0}\r\n", total);
         }
-        private async Task<byte[]> GetURLContentsAsync(string url)
+
+        async Task<int> ProcessURLAsync(string url, HttpClient client)
         {
-            // The downloaded resource ends up in the variable named content.
-            var content = new MemoryStream();
-
-            // Initialize an HttpWebRequest for the current URL.
-            var webReq = (HttpWebRequest)WebRequest.Create(url);
-
-            // Send the request to the Internet resource and wait for
-            // the response.
-            // Note: you can't use HttpWebRequest.GetResponse in a Windows Store app.
-            using (WebResponse response = await webReq.GetResponseAsync())
-            {
-                // Get the data stream that is associated with the specified URL.
-                using (Stream responseStream = response.GetResponseStream())
-                {
-                    // Read the bytes in responseStream and copy them to content.
-                    responseStream.CopyTo(content);
-                }
-            }
-
-            // Return the result as a byte array.
-            return content.ToArray();
+            var byteArray = await client.GetByteArrayAsync(url);
+            DisplayResults(url, byteArray);
+            return byteArray.Length;
         }
-
-        private List<string> SetUpURLList()
-        {
-            var urls = new List<string>
-    {
-        "http://msdn.microsoft.com/library/windows/apps/br211380.aspx",
-        "http://msdn.microsoft.com",
-        "http://msdn.microsoft.com/library/hh290136.aspx",
-        "http://msdn.microsoft.com/library/ee256749.aspx",
-        "http://msdn.microsoft.com/library/hh290138.aspx",
-        "http://msdn.microsoft.com/library/hh290140.aspx",
-        "http://msdn.microsoft.com/library/dd470362.aspx",
-        "http://msdn.microsoft.com/library/aa578028.aspx",
-        "http://msdn.microsoft.com/library/ms404677.aspx",
-        "http://msdn.microsoft.com/library/ff730837.aspx"
-    };
-            return urls;
-        }
-
-        //private async Task<int> ProcessURLAsync(string url)
-        //{
-        //    var byteArray = await GetURLContentsAsync(url);
-        //    DisplayResults(url, byteArray);
-        //    return byteArray.Length;
-        //}
 
         private void DisplayResults(string url, byte[] content)
         {
-            // Display the length of each website. The string format
-            // is designed to be used with a monospaced font, such as
-            // Lucida Console or Global Monospace.
+            // Display the length of each website. The string format   
+            // is designed to be used with a monospaced font, such as  
+            // Lucida Console or Global Monospace.  
             var bytes = content.Length;
-            // Strip off the "http://".
+            // Strip off the "http://".  
             var displayURL = url.Replace("http://", "");
             resultsTextBox.Text += string.Format("\n{0,-58} {1,8}", displayURL, bytes);
         }
 
-        
     }
 }
