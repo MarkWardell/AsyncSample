@@ -15,7 +15,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-
+/// <summary>
+/// https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/walkthrough-accessing-the-web-by-using-async-and-await
+/// </summary>
 namespace AsyncExampleWPF
 {
     /// <summary>
@@ -60,6 +62,30 @@ namespace AsyncExampleWPF
             resultsTextBox.Text +=
                 string.Format("\r\n\r\nTotal bytes returned:  {0}\r\n", total);
         }
+        private async Task<byte[]> GetURLContentsAsync(string url)
+        {
+            // The downloaded resource ends up in the variable named content.
+            var content = new MemoryStream();
+
+            // Initialize an HttpWebRequest for the current URL.
+            var webReq = (HttpWebRequest)WebRequest.Create(url);
+
+            // Send the request to the Internet resource and wait for
+            // the response.
+            // Note: you can't use HttpWebRequest.GetResponse in a Windows Store app.
+            using (WebResponse response = await webReq.GetResponseAsync())
+            {
+                // Get the data stream that is associated with the specified URL.
+                using (Stream responseStream = response.GetResponseStream())
+                {
+                    // Read the bytes in responseStream and copy them to content.
+                    responseStream.CopyTo(content);
+                }
+            }
+
+            // Return the result as a byte array.
+            return content.ToArray();
+        }
 
         private List<string> SetUpURLList()
         {
@@ -79,30 +105,11 @@ namespace AsyncExampleWPF
             return urls;
         }
 
-        //private async Task<byte[]> GetURLContentsAsync(string url)
+        //private async Task<int> ProcessURLAsync(string url)
         //{
-        //    // The downloaded resource ends up in the variable named content.
-        //    var content = new MemoryStream();
-
-        //    // Initialize an HttpWebRequest for the current URL.
-        //    var webReq = (HttpWebRequest)WebRequest.Create(url);
-
-        //    // Send the request to the Internet resource and wait for
-        //    // the response.
-        //    // Note: you can't use HttpWebRequest.GetResponse in a Windows Store app.
-        //    using (WebResponse response = await webReq.GetResponseAsync())
-        //    //using (WebResponse response = webReq.GetResponse())
-        //    {
-        //        // Get the data stream that is associated with the specified URL.
-        //        using (Stream responseStream = response.GetResponseStream())
-        //        {
-        //            // Read the bytes in responseStream and copy them to content.
-        //            await responseStream.CopyToAsync(content);
-        //        }
-        //    }
-
-        //    // Return the result as a byte array.
-        //    return content.ToArray();
+        //    var byteArray = await GetURLContentsAsync(url);
+        //    DisplayResults(url, byteArray);
+        //    return byteArray.Length;
         //}
 
         private void DisplayResults(string url, byte[] content)
