@@ -65,7 +65,7 @@ namespace AsyncExampleWPF
                 string.Format("\r\n\r\nTotal bytes returned:  {0}\r\n", total);
         }
 
-        async Task<int> ProcessURLAsync(string url, HttpClient client)
+        private async Task<int> ProcessURLAsync(string url, HttpClient client)
         {
             var byteArray = await client.GetByteArrayAsync(url);
             DisplayResults(url, byteArray);
