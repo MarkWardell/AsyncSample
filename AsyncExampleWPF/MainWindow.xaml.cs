@@ -15,6 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using KattisUtilities;
 /// <summary>
 /// https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/walkthrough-accessing-the-web-by-using-async-and-await
 /// </summary>
@@ -30,28 +31,18 @@ namespace AsyncExampleWPF
             InitializeComponent();
         }
 
-        //private async void startButtonClickAsync(object sender, RoutedEventArgs e)
-        //{
-        //    resultsTextBox.Clear();
-        //    await CreateMultipleTasksAsync();
-        //    resultsTextBox.Text += "\r\n\r\nControl returned to startButton_Click.\r\n";
-        //}
-
+      
         private async void startButtonClickAsync(object sender, RoutedEventArgs e)
         {
             resultsTextBox.Clear();
 
-            // One-step async call.  
-            await SumPageSizesAsync();
-
-            // Two-step async call.  
-            //Task sumTask = SumPageSizesAsync();  
-            //await sumTask;  
-
-            resultsTextBox.Text += "\r\nControl returned to startButton_Click.\r\n";
+           
+            int n = await GrabAllKattisAsync();
+            
+           
         }
 
-        private async Task SumPageSizesAsync()
+        private async Task <int> GrabAllKattisAsync()
         {
             // Make a list of web addresses.  
             List<string> urlList = SetUpURLList();
@@ -62,7 +53,7 @@ namespace AsyncExampleWPF
 
             // Create a query.  
             IEnumerable<Task<int>> downloadTasksQuery =
-                from url in urlList select ProcessURL(url, client);
+                from url in urlList select ProcesKattissURL(url, client);
 
             // Use ToArray to execute the query and start the download tasks.  
             Task<int>[] downloadTasks = downloadTasksQuery.ToArray();
@@ -76,66 +67,47 @@ namespace AsyncExampleWPF
             //Task<int[]> whenAllTask = Task.WhenAll(downloadTasks);  
             //int[] lengths = await whenAllTask;  
 
-            int total = lengths.Sum();
+            
+             return lengths.Sum();
 
-            //var total = 0;  
-            //foreach (var url in urlList)  
-            //{  
-            //    // GetByteArrayAsync returns a Task<T>. At completion, the task  
-            //    // produces a byte array.  
-            //    byte[] urlContent = await client.GetByteArrayAsync(url);  
-
-            //    // The previous line abbreviates the following two assignment  
-            //    // statements.  
-            //    Task<byte[]> getContentTask = client.GetByteArrayAsync(url);  
-            //    byte[] urlContent = await getContentTask;  
-
-            //    DisplayResults(url, urlContent);  
-
-            //    // Update the total.  
-            //    total += urlContent.Length;  
-            //}  
-
-            // Display the total count for all of the web addresses.  
-            resultsTextBox.Text +=
-                string.Format("\r\n\r\nTotal bytes returned:  {0}\r\n", total);
         }
 
         private List<string> SetUpURLList()
         {
             List<string> urls = new List<string>
             {
-                "http://msdn.microsoft.com",
-                "http://msdn.microsoft.com/library/hh290136.aspx",
-                "http://msdn.microsoft.com/library/ee256749.aspx",
-                "http://msdn.microsoft.com/library/hh290138.aspx",
-                "http://msdn.microsoft.com/library/hh290140.aspx",
-                "http://msdn.microsoft.com/library/dd470362.aspx",
-                "http://msdn.microsoft.com/library/aa578028.aspx",
-                "http://msdn.microsoft.com/library/ms404677.aspx",
-                "http://msdn.microsoft.com/library/ff730837.aspx"
+                "https://open.kattis.com/problems",
+                "https://open.kattis.com/problems?page=1",
+                "https://open.kattis.com/problems?page=2",
+                "https://open.kattis.com/problems?page=3",
+                "https://open.kattis.com/problems?page=4",
+                "https://open.kattis.com/problems?page=5",
+                "https://open.kattis.com/problems?page=6",
+                "https://open.kattis.com/problems?page=7",
+                "https://open.kattis.com/problems?page=8"
+
             };
             return urls;
         }
 
+     
         // The actions from the foreach loop are moved to this async method.  
-        async Task<int> ProcessURL(string url, HttpClient client)
+        async Task<int> ProcesKattissURL(string url, HttpClient client)
         {
-            byte[] byteArray = await client.GetByteArrayAsync(url);
-            DisplayResults(url, byteArray);
-            return byteArray.Length;
+            UrlItem urlItem = new UrlItem(url, "");
+            int n = await urlItem.Grab(client);
+            resultsTextBox.Text += urlItem.Html;
+            int retVal = urlItem.Html.Length;
+            
+
+            return retVal;
         }
 
-        private void DisplayResults(string url, byte[] content)
-        {
-            // Display the length of each web site. The string format   
-            // is designed to be used with a monospaced font, such as  
-            // Lucida Console or Global Monospace.  
-            var bytes = content.Length;
-            // Strip off the "http://".  
-            var displayURL = url.Replace("http://", "");
-            resultsTextBox.Text += string.Format("\n{0,-58} {1,8}", displayURL, bytes);
-        }
 
+        private void resultsTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (lblTotal != null)
+            lblTotal.Text  = resultsTextBox.Text.Length.ToString();
+        }
     }
 }
